@@ -1,30 +1,32 @@
 import type { SkMatrix, Vector } from "@shopify/react-native-skia";
 import { Skia, MatrixIndex } from "@shopify/react-native-skia";
 
-export const scale = (matrix: SkMatrix, s: number, origin: Vector) => {
+export const scale = (input: SkMatrix, s: number, origin: Vector) => {
   "worklet";
-  const source = Skia.Matrix(matrix.get());
-  source.translate(origin.x, origin.y);
-  source.scale(s, s);
-  source.translate(-origin.x, -origin.y);
-  return source;
+  const output = Skia.Matrix();
+  output.swap(input);
+  output.translate(origin.x, origin.y);
+  output.scale(s, s);
+  output.translate(-origin.x, -origin.y);
+  return output;
 };
 
-export const rotateZ = (matrix: SkMatrix, theta: number, origin: Vector) => {
+export const rotateZ = (input: SkMatrix, theta: number, origin: Vector) => {
   "worklet";
-  const source = Skia.Matrix(matrix.get());
-  source.translate(origin.x, origin.y);
-  source.rotate(theta);
-  source.translate(-origin.x, -origin.y);
-  return source;
+  const output = Skia.Matrix();
+  output.swap(input);
+  output.translate(origin.x, origin.y);
+  output.rotate(theta);
+  output.translate(-origin.x, -origin.y);
+  return output;
 };
 
-export const translate = (matrix: SkMatrix, x: number, y: number) => {
+export const translate = (input: SkMatrix, x: number, y: number) => {
   "worklet";
-  const m = Skia.Matrix();
-  m.translate(x, y);
-  m.concat(matrix);
-  return m;
+  const output = Skia.Matrix();
+  output.translate(x, y);
+  output.concat(input);
+  return output;
 };
 
 export const toM4 = (m3: SkMatrix) => {
