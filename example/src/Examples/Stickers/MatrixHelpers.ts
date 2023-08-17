@@ -1,31 +1,59 @@
 import type { SkMatrix, Vector } from "@shopify/react-native-skia";
-import { Skia, MatrixIndex } from "@shopify/react-native-skia";
+import { MatrixIndex, Skia } from "@shopify/react-native-skia";
+import { useMemo } from "react";
+import type { SharedValue } from "react-native-reanimated";
 
-export const scale = (input: SkMatrix, s: number, origin: Vector) => {
+export const useMatrixBuffer = () =>
+  useMemo(() => [Skia.Matrix(), Skia.Matrix()], []);
+
+const swapMatrixBuffer = (buffer: SkMatrix[], current: SkMatrix) => {
   "worklet";
-  const output = Skia.Matrix();
-  output.swap(input);
-  output.translate(origin.x, origin.y);
-  output.scale(s, s);
-  output.translate(-origin.x, -origin.y);
-  return output;
+  const result = buffer.find((m) => m !== current)!;
+  result.reset();
+  return Skia.Matrix();
 };
 
-export const rotateZ = (input: SkMatrix, theta: number, origin: Vector) => {
+export const scale = (
+  buffer: SkMatrix[],
+  output: SharedValue<SkMatrix>,
+  input: SkMatrix,
+  s: number,
+  origin: Vector
+) => {
   "worklet";
-  const output = Skia.Matrix();
-  output.swap(input);
-  output.translate(origin.x, origin.y);
-  output.rotate(theta);
-  output.translate(-origin.x, -origin.y);
-  return output;
+  output.value = swapMatrixBuffer(buffer, output.value);
+  output.value.swap(input);
+  output.value.translate(origin.x, origin.y);
+  output.value.scale(s, s);
+  output.value.translate(-origin.x, -origin.y);
 };
 
-export const translate = (input: SkMatrix, x: number, y: number) => {
+export const rotateZ = (
+  buffer: SkMatrix[],
+  output: SharedValue<SkMatrix>,
+  input: SkMatrix,
+  theta: number,
+  origin: Vector
+) => {
   "worklet";
-  const output = Skia.Matrix();
-  output.translate(x, y);
-  output.concat(input);
+  output.value = swapMatrixBuffer(buffer, output.value);
+  output.value.swap(input);
+  output.value.translate(origin.x, origin.y);
+  output.value.rotate(theta);
+  output.value.translate(-origin.x, -origin.y);
+};
+
+export const translate = (
+  buffer: SkMatrix[],
+  output: SharedValue<SkMatrix>,
+  input: SkMatrix,
+  x: number,
+  y: number
+) => {
+  "worklet";
+  output.value = swapMatrixBuffer(buffer, output.value);
+  output.value.translate(x, y);
+  output.value.concat(input);
   return output;
 };
 

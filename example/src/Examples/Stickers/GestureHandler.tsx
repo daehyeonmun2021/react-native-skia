@@ -1,6 +1,6 @@
 import type { SkMatrix, SkRect } from "@shopify/react-native-skia";
 import { Skia } from "@shopify/react-native-skia";
-import React from "react";
+import React, { useMemo } from "react";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import type { SharedValue } from "react-native-reanimated";
 import Animated, {
@@ -8,7 +8,13 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 
-import { rotateZ, toM4, translate, scale } from "./MatrixHelpers";
+import {
+  rotateZ,
+  toM4,
+  translate,
+  scale,
+  useMatrixBuffer,
+} from "./MatrixHelpers";
 
 interface GestureHandlerProps {
   matrix: SharedValue<SkMatrix>;
@@ -24,9 +30,12 @@ export const GestureHandler = ({
   const { x, y, width, height } = dimensions;
   const origin = useSharedValue(Skia.Point(0, 0));
   const offset = useSharedValue(Skia.Matrix());
+  const translationBuffer = useMatrixBuffer();
+  const rotateBuffer = useMatrixBuffer();
+  const scaleBuffer = useMatrixBuffer();
 
   const pan = Gesture.Pan().onChange((e) => {
-    matrix.value = translate(matrix.value, e.changeX, e.changeY);
+    translate(translationBuffer, matrix, matrix.value, e.changeX, e.changeY);
   });
 
   const rotate = Gesture.Rotation()
@@ -35,7 +44,7 @@ export const GestureHandler = ({
       offset.value = matrix.value;
     })
     .onChange((e) => {
-      matrix.value = rotateZ(offset.value, e.rotation, origin.value);
+      rotateZ(rotateBuffer, matrix, offset.value, e.rotation, origin.value);
     });
 
   const pinch = Gesture.Pinch()
@@ -44,7 +53,7 @@ export const GestureHandler = ({
       offset.value = matrix.value;
     })
     .onChange((e) => {
-      matrix.value = scale(offset.value, e.scale, origin.value);
+      scale(scaleBuffer, matrix, offset.value, e.scale, origin.value);
     });
 
   const style = useAnimatedStyle(() => {
