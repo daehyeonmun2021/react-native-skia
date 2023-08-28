@@ -1,7 +1,6 @@
 package com.shopify.reactnative.skia;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -10,12 +9,16 @@ import android.view.TextureView;
 
 import com.facebook.jni.annotations.DoNotStrip;
 import com.facebook.react.views.view.ReactViewGroup;
-
 public abstract class SkiaBaseView extends ReactViewGroup implements TextureView.SurfaceTextureListener {
 
     @DoNotStrip
-    private Surface mSurface;
+    private Surface mSurface = null;
     private TextureView mTexture;
+    private String ViewTag;
+
+    // TODO: to delete
+    private static int instanceCounter = 0; // Static counter to maintain unique IDs
+
 
     public SkiaBaseView(Context context) {
         super(context);
@@ -23,28 +26,17 @@ public abstract class SkiaBaseView extends ReactViewGroup implements TextureView
         mTexture.setSurfaceTextureListener(this);
         mTexture.setOpaque(false);
         addView(mTexture);
+        ViewTag = "SkiaBaseView" + instanceCounter++;
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        // This API Level is >= 26, we created our own SurfaceTexture,
-        // onSurfaceTextureDestroyed won't be invoked by the texture view
+    protected void onAttachedToWindow() {
+        Log.i(ViewTag, "onAttachedToWindow");
+        super.onAttachedToWindow();
+        // if API Level is >= 26, we created our own SurfaceTexture to have a faster time to first frame
+        // if API Level is <= 26, the SurfaceTexture is created by the TextureView and onSurfaceTextureAvailable will be invoked automatically
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            destroySurface();
-        }
-    }
-
-    public void destroySurface() {
-        Log.i("SkiaBaseView", "destroySurface");
-        surfaceDestroyed();
-        mSurface.release();
-        mSurface = null;
-    }
-
-    public void createSurfaceTexture() {
-        // This API Level is >= 26, we created our own SurfaceTexture to have a faster time to first frame
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            Log.i("SkiaBaseView", "Create SurfaceTexture");
+            Log.i(ViewTag, "Create SurfaceTexture (API Level >= 26)");
             SurfaceTexture surface = new SurfaceTexture(false);
             mTexture.setSurfaceTexture(surface);
             this.onSurfaceTextureAvailable(surface, this.getMeasuredWidth(), this.getMeasuredHeight());
@@ -52,7 +44,14 @@ public abstract class SkiaBaseView extends ReactViewGroup implements TextureView
     }
 
     @Override
+    protected void onDetachedFromWindow() {
+        Log.i(ViewTag, "onDetachedFromWindow");
+        super.onDetachedFromWindow();
+    }
+
+    @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        Log.i(ViewTag, "onLayout");
         super.onLayout(changed, left, top, right, bottom);
         mTexture.layout(0, 0, this.getMeasuredWidth(), this.getMeasuredHeight());
     }
@@ -129,24 +128,24 @@ public abstract class SkiaBaseView extends ReactViewGroup implements TextureView
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        Log.i("SkiaBaseView", "onSurfaceTextureAvailable " + width + "/" + height);
+        Log.i(ViewTag, "onSurfaceTextureAvailable " + width + "/" + height);
         mSurface = new Surface(surface);
         surfaceAvailable(mSurface, width, height);
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        Log.i("SkiaBaseView", "onSurfaceTextureSizeChanged " + width + "/" + height);
+        Log.i(ViewTag, "onSurfaceTextureSizeChanged " + width + "/" + height);
         surfaceSizeChanged(width, height);
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        Log.i("SkiaBaseView", "onSurfaceTextureDestroyed");
+        Log.i(ViewTag, "onSurfaceTextureDestroyed");
         // https://developer.android.com/reference/android/view/TextureView.SurfaceTextureListener#onSurfaceTextureDestroyed(android.graphics.SurfaceTexture)
-        destroySurface();
-        // We create again a new SurfaceTexture to have a faster time to first frame (if API >= 26)
-        createSurfaceTexture();
+        surfaceDestroyed();
+        mSurface.release();
+        mSurface = null;
         return false;
     }
 

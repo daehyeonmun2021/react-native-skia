@@ -62,8 +62,9 @@ void RNSkOpenGLCanvasProvider::surfaceAvailable(jobject surface, int width,
       SkiaOpenGLSurfaceFactory::makeWindowedSurface(surface, width, height);
 
   // Post redraw request to ensure we paint in the next draw cycle.
-  _requestRedraw();
+  renderImmediate();
 }
+
 void RNSkOpenGLCanvasProvider::surfaceDestroyed() {
   // destroy the renderer (a unique pointer so the dtor will be called
   // immediately.)
@@ -81,6 +82,6 @@ void RNSkOpenGLCanvasProvider::surfaceSizeChanged(int width, int height) {
   _surfaceHolder->resize(width, height);
 
   // Redraw after size change
-  _requestRedraw();
+  renderImmediate();
 }
 } // namespace RNSkia

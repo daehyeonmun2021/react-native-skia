@@ -8,6 +8,7 @@ import {
   SkiaPictureView,
   Skia,
   useSVG,
+  Picture,
 } from "@shopify/react-native-skia";
 
 import { Octocat } from "./SvgIcons/OctocatIcon";
